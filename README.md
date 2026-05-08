@@ -10,29 +10,26 @@ tmr-rydultowy/
 ├── css/
 │   └── style.css       ← cały styl strony
 ├── js/
-│   └── main.js         ← interaktywność (menu, accordion, lightbox)
+│   └── main.js         ← interaktywność + auto-load Kluki z GitHub
 ├── img/
-│   ├── logo.png        ← herb TMR
-│   ├── header-bg.png   ← tło z poprzedniej strony
-│   ├── menu-item.png
-│   └── galeria/        ← zdjęcia z wydarzeń (do uzupełnienia)
+│   ├── herb-tmr.png        ← herb TMR (do nawigacji, favicon)
+│   ├── herb-tmr-large.png  ← duży herb (do hero)
+│   └── galeria/            ← zdjęcia z wydarzeń
 ├── pdf/
-│   └── kluka/          ← numery gazety w PDF (do uzupełnienia)
+│   └── kluka/          ← TUTAJ wrzucasz numery gazety w PDF
 ├── README.md
 └── .gitignore
 ```
 
 ## 🚀 Uruchomienie lokalnie
 
-Najprościej — otwórz `index.html` w przeglądarce.
-
-Albo uruchom mały serwer (lepiej, bo niektóre rzeczy wymagają HTTP):
+Otwórz `index.html` w przeglądarce. Albo lepiej — uruchom mały serwer:
 
 ```bash
 # Python 3
 python3 -m http.server 8000
 
-# Node.js (jeśli masz npx)
+# Node.js
 npx serve
 
 # PHP
@@ -58,11 +55,137 @@ Następnie wejdź na `http://localhost:8000`.
    - W **Source** wybierz: `Deploy from a branch`
    - W **Branch** wybierz `main` i folder `/ (root)`
    - Zapisz
-4. Strona pojawi się pod adresem `https://TWOJ-USER.github.io/tmr-rydultowy/` (czasem trzeba poczekać 1-2 minuty).
+4. Strona pojawi się pod adresem `https://TWOJ-USER.github.io/tmr-rydultowy/`.
+
+## 📚 Auto-load Kluki — najważniejsze!
+
+Strona ma **automatyczne ładowanie listy Kluki** z GitHuba. Wrzucasz PDFy do folderu `pdf/kluka/` na GitHub i strona sama wyświetla je w archiwum — **bez edytowania HTMLa**.
+
+### Krok 1: Skonfiguruj `js/main.js`
+
+Otwórz `js/main.js`, znajdź na początku blok:
+
+```javascript
+const GITHUB_CONFIG = {
+    user: '',                  // ← wpisz tutaj swój GitHub username
+    repo: 'tmr-rydultowy',
+    branch: 'main',
+    pdfPath: 'pdf/kluka',
+    cacheMinutes: 30
+};
+```
+
+Wpisz tam **swojego GitHub username** (np. `'jankowalski'`). Zapisz, push.
+
+### Krok 2: Nazwy plików PDF
+
+Pliki w `pdf/kluka/` muszą mieć ścisły format nazwy:
+
+```
+KlukaMIESIAC ROK.pdf
+```
+
+**Przykłady:**
+- `KlukaStyczen2026.pdf`
+- `KlukaLuty2026.pdf`
+- `KlukaMarzec2026.pdf`
+- `KlukaGrudzien2025.pdf`
+
+**⚠️ WAŻNE:** Nazwy miesięcy **bez polskich znaków**:
+
+| Plik         | Wyświetli się jako |
+|--------------|-------------------|
+| Styczen      | Styczeń           |
+| Luty         | Luty              |
+| Marzec       | Marzec            |
+| Kwiecien     | Kwiecień          |
+| Maj          | Maj               |
+| Czerwiec     | Czerwiec          |
+| Lipiec       | Lipiec            |
+| Sierpien     | Sierpień          |
+| Wrzesien     | Wrzesień          |
+| Pazdziernik  | Październik       |
+| Listopad     | Listopad          |
+| Grudzien     | Grudzień          |
+
+### Krok 3: Push i koniec!
+
+```bash
+git add pdf/kluka/KlukaMarzec2026.pdf
+git commit -m "Dodano marcową Klukę"
+git push
+```
+
+Strona po max 30 minutach (cache) sama pokaże nową Klukę. Jeśli chcesz natychmiast — w przeglądarce `Ctrl+F5` (hard refresh).
+
+### Co robi auto-load?
+
+JavaScript pobiera listę plików z GitHuba przez ich publiczne API:
+```
+https://api.github.com/repos/USER/REPO/contents/pdf/kluka
+```
+
+Następnie:
+1. Filtruje pliki `.pdf` z prefixem `Kluka`
+2. Parsuje miesiąc i rok z nazwy
+3. Grupuje po latach (najnowszy rok rozwinięty domyślnie)
+4. Sortuje miesiące malejąco (od najnowszego)
+5. Cache w sessionStorage (30 min) żeby nie wybijać limitu API (60 req/h)
+
+Jeśli auto-load **nie zadziała** (np. nie wpisałeś usera) — zostaje wyświetlona lista z HTML jako fallback.
+
+## ✏️ Inne zmiany w treści
+
+### Aktualności (klikalne karty)
+W `index.html` znajdź `<!-- ===== AKTUALNOŚCI ===== -->`. Skopiuj blok `<article class="news-item">`, zmień:
+- `data-news="cos"` (unikalna nazwa)
+- `news-tag` (Ważne / Zespół / itd.)
+- `news-date-text`, `news-title`, `news-excerpt`
+- Treść w `news-body-inner` z gridem `news-info-grid` na 2-4 bloki info
+
+### Galeria — dodaj kolejne wydarzenie
+W sekcji `<!-- ===== GALERIA ===== -->` skopiuj cały `<div class="gallery-event">`, zmień:
+- numer (`gallery-event-number`: 04, 05, ...)
+- tytuł (`gallery-event-title`)
+- linki/atrybuty `data-caption` w `<a class="gallery-item">`
+
+Zdjęcia wrzuć do `img/galeria/`.
+
+### Logotypy partnerów
+W `img/` umieść logotypy (np. `partner-cieplownia.png`). W sekcji `<!-- ===== PARTNERZY ===== -->`:
+```html
+<a href="https://strona-partnera.pl" class="partner-card" target="_blank" rel="noopener">
+    <img src="img/partner-cieplownia.png" alt="Ciepłownia">
+</a>
+```
+
+## 🎨 Customizacja kolorów
+
+Wszystkie kolory w zmiennych CSS na początku `css/style.css`:
+
+```css
+:root {
+    --blue-primary: #417bb8;       /* jasny niebieski z logo */
+    --blue-deep: #1E4A8A;          /* ciemniejszy do tła */
+    --blue-darkest: #143862;       /* najciemniejszy do stopki */
+    --yellow-pastel: #f8e45d;      /* żółty z logo */
+    /* ... */
+}
+```
+
+Zmień raz tutaj — zmieni się wszędzie.
+
+## 📋 Co zostało (TODO)
+
+- [ ] Skonfigurować `GITHUB_CONFIG.user` w `js/main.js`
+- [ ] Wgrać prawdziwe numery gazety Kluka (PDF) do `pdf/kluka/` z odpowiednimi nazwami
+- [ ] Wgrać `pdf/Regulamin-BUL.pdf`
+- [ ] Wrzucić logotypy partnerów do `img/` i podmienić placeholdery w HTML
+- [ ] Dodać własną domenę (opcjonalnie — `tmrrydultowy.pl`)
 
 ### Własna domena (np. `tmrrydultowy.pl`)
 
-1. W folderze projektu utwórz plik `CNAME` (bez rozszerzenia) z zawartością:
+1. W folderze projektu utwórz plik `CNAME` z zawartością:
    ```
    tmrrydultowy.pl
    ```
@@ -71,93 +194,17 @@ Następnie wejdź na `http://localhost:8000`.
    - **Typ A** → `185.199.109.153`
    - **Typ A** → `185.199.110.153`
    - **Typ A** → `185.199.111.153`
-3. W Settings → Pages w polu **Custom domain** wpisz `tmrrydultowy.pl` i włącz **Enforce HTTPS**.
-
-## ✏️ Edycja treści
-
-### Aktualności
-W `index.html` znajdź sekcję `<!-- ===== AKTUALNOŚCI ===== -->`. Każda aktualność to blok `<article class="news-card">`. Skopiuj, zmień datę, tag i treść.
-
-### Numery gazety Kluka
-W sekcji `<!-- ===== KLUKA ===== -->` znajdziesz `<div class="archive-year">` dla każdego roku. Wewnątrz `<ul class="archive-list">` dodaj nowy `<li>` z linkiem do PDFa:
-```html
-<li><a href="pdf/kluka/kluka-485.pdf">
-    <span class="issue-num">nr 485</span>
-    <span class="issue-date">15 maja 2026</span>
-    <span class="issue-pdf">PDF →</span>
-</a></li>
-```
-
-PDFy wrzuć do folderu `pdf/kluka/`.
-
-### Galeria
-W folderze `img/galeria/` umieść zdjęcia, np. `wydarzenie-2025-01.jpg`. W `index.html` w sekcji `<!-- ===== GALERIA ===== -->` zmień placeholdery na:
-```html
-<a href="img/galeria/wydarzenie-2025-01.jpg" class="gallery-item" data-caption="Wybory Rydułtowika 2025">
-    <img src="img/galeria/wydarzenie-2025-01.jpg" alt="">
-</a>
-```
-
-### Logotypy partnerów
-W folderze `img/` umieść logotypy (np. `partner-cieplownia.png`). W sekcji `<!-- ===== PARTNERZY ===== -->` zamień placeholder na:
-```html
-<a href="https://strona-partnera.pl" class="partner-card" target="_blank" rel="noopener">
-    <img src="img/partner-cieplownia.png" alt="Ciepłownia">
-</a>
-```
-
-## 📧 Formularz kontaktowy
-
-Formularz na razie wyświetla tylko alert. Aby działał, podepnij jeden z serwisów:
-
-### Opcja 1: Formspree (najprostsza, darmowy plan)
-1. Załóż konto na [formspree.io](https://formspree.io)
-2. W `index.html` zmień `<form id="contactForm">` na:
-   ```html
-   <form id="contactForm" action="https://formspree.io/f/TWOJ-ID" method="POST">
-   ```
-3. W `js/main.js` usuń `e.preventDefault()` w handlerze submit
-
-### Opcja 2: EmailJS (więcej kontroli)
-Zobacz [emailjs.com](https://emailjs.com) i podepnij według ich dokumentacji.
-
-## 🎨 Customizacja kolorów
-
-Wszystkie kolory są w zmiennych CSS na górze pliku `css/style.css`:
-
-```css
-:root {
-    --blue-primary: #1E4A8A;       /* główny niebieski */
-    --blue-secondary: #2D6CB8;     /* jaśniejszy niebieski */
-    --yellow-pastel: #FFE44D;      /* żółty z logo */
-    /* ... */
-}
-```
-
-Zmień raz tutaj — zmieni się wszędzie.
-
-## 📋 Co jest do zrobienia (TODO)
-
-- [ ] Wgrać prawdziwe numery gazety Kluka (PDF) do `pdf/kluka/`
-- [ ] Wgrać prawdziwe zdjęcia do galerii
-- [ ] Wgrać logotypy partnerów
-- [ ] Podpiąć formularz kontaktowy (Formspree)
-- [ ] Sprawdzić i zaktualizować dane kontaktowe (telefon, mail)
-- [ ] Sprawdzić aktualne władze TMR (na starej stronie był Henryk Machnik)
-- [ ] Dodać prawdziwe statystyki (rok założenia: 1993 — sprawdzony)
-- [ ] Skonfigurować Decap CMS (opcjonalnie, jak chcecie żeby ktoś z TMR sam edytował)
-- [ ] Dodać favicon (na razie używa logo.png)
-- [ ] SEO: dodać tagi Open Graph / Twitter Card
-- [ ] Dodać Google Analytics (opcjonalnie)
+3. W Settings → Pages → Custom domain wpisz `tmrrydultowy.pl` i włącz Enforce HTTPS.
 
 ## 🛠️ Technologie
 
 - **HTML5** — semantyczny markup
 - **CSS3** — zmienne, grid, flex, animacje, media queries
-- **JavaScript (vanilla)** — bez zależności, bez frameworków
-- **Google Fonts** — Cormorant Garamond + Source Sans 3
+- **JavaScript (vanilla)** — bez bibliotek, bez frameworków
+- **Google Fonts** — Spectral + Manrope
+- **GitHub Contents API** — auto-load listy Kluki
 
 ## 📜 Licencja
 
 Treści: © Towarzystwo Miłośników Rydułtów
-Kod: użyj jak chcesz, niczego nie obiecuję.
+Kod: użyj jak chcesz.
